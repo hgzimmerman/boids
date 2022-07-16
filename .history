@@ -1,0 +1,10 @@
+trunk serve
+exit
+cargo check
+ls
+cat default.nix 
+cargo check
+cat default.nix 
+quit
+exit
+exit

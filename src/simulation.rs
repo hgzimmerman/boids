@@ -55,10 +55,10 @@ impl Component for Simulation {
 
         let config = Config {
             coherence: 0.15,
-            separation: 35.0,
+            separation: 40.0,
             alignment: 2.0,
             visual_range: 40.0,
-            max_speed: 5.0,
+            max_speed: 3.0,
             max_acceleration: 0.6
         };
 
@@ -75,7 +75,7 @@ impl Component for Simulation {
 			}
 		};
 
-		let _timer_promise = wasm_bindgen_futures::spawn_local(async move {
+		wasm_bindgen_futures::spawn_local(async move {
 			gloo_timers::future::IntervalStream::new(16).for_each(|_| async {
 				on_next()
 			}).await;

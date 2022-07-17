@@ -15,12 +15,12 @@ pub(crate) struct BoidInner {
 }
 
 impl Boid {
-
 	pub fn new(position: Vec2d, velocity: Vec2d, acceleration: Vec2d) -> Self {
 		Self {
             inner: Mutable::new(BoidInner { position, velocity, acceleration })
 		}
 	}
+    #[allow(unused)]
 	pub fn new_at(position: Vec2d) -> Self {
 		Self {
             inner: Mutable::new(BoidInner { position, ..Default::default() })
@@ -63,7 +63,7 @@ impl Boid {
                             let distance = vector_to_boid.length();
                             // more power the closer they are
                             let power = 1.0 / distance;
-                            let normalized = vector_to_boid.normalize_vector();
+                            let normalized = vector_to_boid.normalize();
                             acc + normalized * power * config.separation
                         }) 
                     };
@@ -81,7 +81,7 @@ impl Boid {
                         acceleration + velocity_center * config.alignment
                     };
 
-                    const PERIMETER_FRAME: f32 = 100.0;
+                    const PERIMETER_FRAME: f32 = 50.0;
                     const RETURN_MULTIPLIER: f32 = 2.0;
 
                     if boid.position.x < 0.0 + PERIMETER_FRAME {

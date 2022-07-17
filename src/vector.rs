@@ -76,37 +76,45 @@ impl Vec2d {
         // Invert y axis because the 0,0 point is in the top-left, making the y-axis inverted
 		f32::atan2(self.x, -self.y)
 	}
-    /// Slightly better, no allocs, but no indexing either
+    /// Naive way to get the closest items in a list:
+    /// No allocs, but no use of advanced datastructures for improved indexing either, relies on sorting. 
+    /// 
+    /// O(n log_n) when used to search for all items, since it involves sorting the slice for every indiviual boid to find the closest neighbors.
     #[allow(unused)]
     pub fn naive_n_closest2<'a>(&self, list: &'a mut [Self], n: usize) -> &'a [Self] {
         list.sort_by_key(|rhs| ordered_float::OrderedFloat(self.distance(rhs)));
         let n = std::cmp::min(list.len(), n-1);
         &list[1..n]
     }
+    /// Distance between two points
     pub fn distance(&self, rhs: &Self) -> f32 {
-        let lhs= self;
-        return f32::sqrt(
-            (lhs.x - rhs.x).powi(2) + (lhs.y - rhs.y).powi(2)
-        )
+        (*self-*rhs).length()
     }
-    /// normalizes the vector so that the total length is 1 
-    pub fn normalize_vector(self) -> Self{
+    /// Normalizes the vector so that the total length is 1.
+    pub fn normalize(self) -> Self{
         self / self.length()
     }
-    pub fn clamp(self, max: f32) -> Self{
-        if self.length() > max {
-            self.set_length(max)
+    /// Preserves the direction of the vector while setting a maximum value for the length 
+    pub fn clamp(self, max: f32) -> Self {
+        let length = self.length();
+        if length > max {
+            self.set_length_inner(length, max)
         } else {
             self
         }
     }
+    /// Length of the vector
     #[inline]
     pub fn length(self) -> f32 {
         f32::sqrt(self.x.powi(2) + self.y.powi(2))
     }
+    #[allow(unused)]
     pub fn set_length(self, length: f32) -> Self {
         let old_length = self.length();
-        let factor = length / old_length;
+        self.set_length_inner(old_length, length) 
+    }
+    fn set_length_inner(self, old_length: f32, new_length: f32) -> Self {
+        let factor = new_length / old_length;
         Self { 
             x: self.x * factor,
             y: self.y * factor 

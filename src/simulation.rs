@@ -54,12 +54,12 @@ impl Component for Simulation {
 		let sv = self.boids.signal_vec_cloned();
 
         let config = Config {
-            coherence: 0.15,
-            separation: 40.0,
+            coherence: 0.25,
+            separation: 45.0,
             alignment: 2.0,
-            visual_range: 40.0,
-            max_speed: 3.0,
-            max_acceleration: 0.6
+            visual_range: 25.0,
+            max_speed: 2.8,
+            max_acceleration: 0.4
         };
 
 		let on_next = {

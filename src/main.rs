@@ -16,6 +16,6 @@ fn main() {
 		.body()
 		.unwrap()
 		.into();
-	let simulation = Simulation::new_generate_random(700);
+	let simulation = Simulation::new_generate_random(800);
 	App::new(body, simulation).forget();
 }

@@ -14,6 +14,18 @@ pub(crate) struct BoidInner {
 	pub acceleration: Vec2d
 }
 
+#[derive(Debug, Default)]
+struct Eval {
+    /// How many nearby entities.
+    count: usize,
+    /// Sum of the positions of the nearby boids.
+    position_sum: Vec2d,
+    /// Sum of the velocites of the nearby boids.
+    velocity_sum: Vec2d,
+    /// Sum of the avoidance calculations of nearby boids.
+    avoidance_sum: Vec2d 
+}
+
 impl Boid {
 	pub fn new(position: Vec2d, velocity: Vec2d, acceleration: Vec2d) -> Self {
 		Self {
@@ -33,53 +45,36 @@ impl Boid {
 
     pub fn next(&self, other_boids: &NearestNeightborsMap, config: &Config, perimeter: Vec2d) {
         self.inner.replace_with(|boid| {
+            let Eval { count, position_sum, velocity_sum, avoidance_sum } =other_boids
+                .find_within_radius(boid.position, config.visual_range)
+                .fold(Eval::default(), |mut acc, next| {
+                    acc.count += 1;
+                    acc.position_sum += next.position;
+                    acc.velocity_sum += next.velocity;
+                    acc.avoidance_sum += {
+                        let vector_to_boid = boid.position - next.position;
+                        let distance = vector_to_boid.length();
+                        // more power the closer they are
+                        let power = 1.0 / distance;
+                        let normalized = vector_to_boid.normalize();
+                        normalized * power * config.separation
+                    };
+                    acc
+                });
+
             BoidInner {
                 position: boid.position + boid.velocity,
-                velocity: (boid.velocity + boid.acceleration).clamp(config.max_speed),
+                velocity: (boid.velocity + boid.acceleration).clamp(config.max_speed) * (std::cmp::max(12, count) as f32 / 12.0),
                 acceleration: {
-                    let closest = other_boids
-                        .find_within_radius(boid.position, config.visual_range)
-                        .map(|boid| boid.position);
-                    let (sum, count) = closest.fold((Vec2d::default(), 0), |(lhs, mut count),rhs| {
-                        count += 1;
-                        (lhs + rhs, count)
-                    });
-                    let acceleration = if count == 0 {
+                    let mut acceleration = if count == 0 {
                         boid.acceleration
                     } else {
-                        let center: Vec2d = sum / count as f32;
-                        // accelerate towards the center mass
-                        -(boid.position - center) * config.coherence
+                        let coherence_acceleration = -(boid.position - position_sum / count as f32) * config.coherence;
+                        let alignment_acceleration = (velocity_sum / count as f32) * config.alignment;
+                        let avoidance_acceleration = avoidance_sum;
+                        coherence_acceleration + alignment_acceleration + avoidance_acceleration
                     };
-
-                    // not the most effecient to do this twice...
-                    let closest = other_boids
-                        .find_within_radius(boid.position, config.visual_range)
-                        .map(|boid| boid.position);
-                    let acceleration = {
-                        // accelearate away from the nearest neighbors
-                        closest.fold(acceleration, |acc, next| {
-                            let vector_to_boid = boid.position - next;
-                            let distance = vector_to_boid.length();
-                            // more power the closer they are
-                            let power = 1.0 / distance;
-                            let normalized = vector_to_boid.normalize();
-                            acc + normalized * power * config.separation
-                        }) 
-                    };
-                    let group_velocity = other_boids
-                        .find_within_radius(boid.position, config.visual_range)
-                        .map(|boid| boid.velocity)
-                        .fold(Vec2d::default(), |lhs,rhs| {
-                            lhs + rhs
-                        });
-                    let mut acceleration = if count == 0 {
-                        acceleration
-                    } else {
-                        let velocity_center: Vec2d = group_velocity / count as f32;
-                        // accelerate in the same direction as the other boids 
-                        acceleration + velocity_center * config.alignment
-                    };
+                    
 
                     const PERIMETER_FRAME: f32 = 50.0;
                     const RETURN_MULTIPLIER: f32 = 2.0;

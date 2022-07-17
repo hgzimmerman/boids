@@ -5,6 +5,8 @@ mod vector;
 mod boid;
 mod simulation;
 use simulation::Simulation;
+mod config;
+mod nearest_neightbor;
 
 fn main() {
 	let body = dom::window()
@@ -14,6 +16,6 @@ fn main() {
 		.body()
 		.unwrap()
 		.into();
-	let simulation = Simulation::new();
+	let simulation = Simulation::new_generate_random(1000);
 	App::new(body, simulation).forget();
 }

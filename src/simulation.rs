@@ -11,12 +11,13 @@ use crate::nearest_neightbor::NearestNeightborsMap;
 use crate::vector::Vec2d;
 pub(crate) struct Simulation {
     boids: MutableVec<Boid>,
+	config: Config,
     window_dimensions: Vec2d,
 }
 
 impl Simulation {
     #[allow(unused)]
-    pub fn new() -> Simulation {
+    pub fn new(config: Config) -> Simulation {
         let y = window()
             .unwrap()
             .inner_height()
@@ -40,10 +41,11 @@ impl Simulation {
                 Boid::new_at(Vec2d { x: 10.0, y: 100.0 }),
                 Boid::new_at(Vec2d { x: 100.0, y: 10.0 }),
             ]),
+			config,
             window_dimensions,
         }
     }
-    pub fn new_generate_random(count: usize) -> Self {
+    pub fn new_generate_random(count: usize, config: Config) -> Self {
         let y = window()
             .unwrap()
             .inner_height()
@@ -74,6 +76,7 @@ impl Simulation {
             .collect();
         Simulation {
             boids: MutableVec::new_with_values(vec),
+			config,
             window_dimensions,
         }
     }
@@ -82,15 +85,7 @@ impl Simulation {
 impl Component for Simulation {
     fn into_node(self) -> Node {
         let sv = self.boids.signal_vec_cloned();
-
-        let config = Config {
-            coherence: 0.25,
-            separation: 45.0,
-            alignment: 2.0,
-            visual_range: 25.0,
-            max_speed: 2.8,
-            max_acceleration: 0.4,
-        };
+        let config = self.config; 
 
         let on_next = {
             move || {
